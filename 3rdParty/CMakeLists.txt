@@ -1,0 +1,2 @@
+
+set(REFERENCE_FMU_DIR "${CMAKE_CURRENT_LIST_DIR}/reference_fmu")
