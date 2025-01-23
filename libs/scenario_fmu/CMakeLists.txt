@@ -4,7 +4,7 @@ file(GLOB_RECURSE ALL_SRC CONFIGURE_DEPENDS "*.h" "*.hpp" "*.cpp")
 
 # message(ALL_SRC schema_parser ="${ALL_SRC}")
 
-add_library(scenario ${ALL_SRC})
+add_library(scenario SHARED ${ALL_SRC})
 
 target_include_directories(scenario
   PUBLIC

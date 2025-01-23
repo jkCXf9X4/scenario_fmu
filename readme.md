@@ -12,7 +12,7 @@ Uses vcpkg for dependencies
 ```
 git submodule init && git submodule update
 
-cmake --preset=vcpkg
+cmake --preset=set1
 
 cmake --build build
 cmake --build build &> build.log

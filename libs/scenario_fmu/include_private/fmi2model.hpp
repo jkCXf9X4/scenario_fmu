@@ -3,6 +3,7 @@
 #include "fmi2.h"
 
 #include <string>
+#include <cstdint>
 
 namespace FMI2
 {
@@ -40,6 +41,7 @@ namespace FMI2
         fmi2Real startTime;
         fmi2Real stopTime;
         fmi2Real time;
+
     };
 
     class fmi2Model
