@@ -3,3 +3,5 @@ git submodule add git@github.com:modelica/Reference-FMUs.git 3rdParty/reference_
 
 
 objdump -TC build/libs/scenario_fmu/libscenario.so
+
+

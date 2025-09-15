@@ -30,7 +30,6 @@ import os
 import platform
 import shutil
 import sys
-import tempfile
 import uuid
 from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
@@ -112,6 +111,7 @@ def generate_model_description(model_name: str, model_id: str, guid: str, num_ou
 
     mvars = ET.SubElement(root, "ModelVariables")
 
+
     sv0 = ET.SubElement(
         mvars,
         "ScalarVariable",
@@ -122,7 +122,7 @@ def generate_model_description(model_name: str, model_id: str, guid: str, num_ou
             "variability": "tunable",
         },
     )
-    ET.SubElement(sv0, "String")
+    ET.SubElement(sv0, "String", attrib={"start":"[]"})
 
     sv1 = ET.SubElement(
         mvars,
@@ -134,7 +134,7 @@ def generate_model_description(model_name: str, model_id: str, guid: str, num_ou
             "variability": "tunable",
         },
     )
-    ET.SubElement(sv1, "String")
+    ET.SubElement(sv1, "String", attrib={"start":"[]"})
 
     for i in range(num_outputs):
         vr = 2 + i
@@ -156,7 +156,6 @@ def generate_model_description(model_name: str, model_id: str, guid: str, num_ou
         index = 3 + i  # 1-based index into ModelVariables list
         ET.SubElement(outs, "Unknown", attrib={"index": str(index)})
 
-    # _indent(root)
     tree = ET.ElementTree(root)
     ET.indent(tree, space="\t", level=0)
     # Serialize to bytes with XML declaration
@@ -189,7 +188,7 @@ def main() -> int:
         return 2
 
     platform_folder = detect_platform_folder()
-    lib_target_name = lib_name_for(model_id)
+    lib_target_name = lib_name_for(model_id).removeprefix("lib")
 
     print("Generate fmu structure and content")
     tmp = build_dir / "fmu_tmp"

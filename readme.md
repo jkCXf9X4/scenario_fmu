@@ -21,9 +21,22 @@ Example parameter value specifying input
 "[0;0;0][1;4;5][2;3;3][2.01;;4][3;3;3]"
 ```
 
+TODO: add support for alternative representation
+
+```
+"[[t1.1;v1.1;d1.1;l1.1][t1.2;v1.2;d1.2;l1.2]][[t2.1;v2.1;d2.1;l2.1][t2.2;v2.2;d2.2;l2.2]]"
+```
+
+t: time, start
+v: value, start
+d: derivative
+l: length
+
+x,y = x:variable y:timestep
+
 ## Interpolation possibilities
 ```
-interpolation  = "[;L;ZOH]"
+interpolation  = "[L;L;ZOH]"
 ```
 - L: Linear
 - C: Cubic
@@ -80,7 +93,11 @@ shared library, either via the provided CMake target or the Python helper script
     - then `cmake --build build --target package_fmu`
 
 - Using the Python script directly
-  - `python3 scripts/package_fmu.py
+  - Command:
+    ```
+    ./scripts/package_fmu.py
+    ```
+see --help for input variations, 
 
   - The script generates `modelDescription.xml`, detects platform (`binaries/linux64`, `darwin64`,
     `win32`/`win64`) and copies the built shared library (`libscenario.so`/`libscenario.dylib`/
@@ -98,3 +115,18 @@ Build and inspect .so (tested on ubuntu 22)
 ```
 cmake --build build && objdump -TC ./build/libs/scenario_fmu/libscenario.so | grep " g    DF"
 ```
+
+## Run with FMPy
+
+Use the helper to run the FMU with FMPy, capture a CSV, and optionally a plot.
+
+- Requirements: `pip install fmpy matplotlib`
+- Example:
+  ```
+  ./scripts/run_fmu.py
+  ```
+see --help for input variations, default is to run the default build
+
+- Outputs:
+  - CSV: `build/run/results.csv`
+  - Plot: `build/run/results.png` (if matplotlib available)

@@ -1,9 +1,13 @@
 
 #include "fmi2.h"
+
 // Internal helper base class capturing FMI2 model data/state
 #include "fmi2model.hpp"
-// Public VR mapping/constants
-#include "scenario_fmu.hpp"
+
+// Utils
+#include "interpolation.hpp"
+#include "series.hpp"
+#include "string.hpp"
 
 #include <vector>
 #include <string>
@@ -14,74 +18,15 @@
 
 namespace
 {
-    enum class Interp
-    {
-        Zoh,
-        Linear,
-        Nearest,
-    };
+    // Value references for parameters
+    inline constexpr unsigned int kVrScenarioInput = 0;
+    inline constexpr unsigned int kVrInterpolation = 1;
 
-    struct SeriesData
-    {
-        // times shared across all series
-        std::vector<double> times;
-        // values per series, size = num_series; every vector matches times.size()
-        std::vector<std::vector<double>> values;
-    };
+    // Outputs start at this value reference and continue sequentially.
+    inline constexpr unsigned int kVrFirstOutput = 2;
 
-    static std::string trim(const std::string &s)
-    {
-        auto b = s.begin();
-        while (b != s.end() && std::isspace(static_cast<unsigned char>(*b))) ++b;
-        auto e = s.end();
-        do {
-            if (e == b) break;
-            --e;
-        } while (e != b && std::isspace(static_cast<unsigned char>(*e)));
-        if (b == s.end()) return std::string();
-        return std::string(b, e + 1);
-    }
+    inline constexpr unsigned int kMaxOutputs = 1000;
 
-    static bool iequals(const std::string &a, const std::string &b)
-    {
-        if (a.size() != b.size()) return false;
-        for (size_t i = 0; i < a.size(); ++i)
-        {
-            if (std::tolower(static_cast<unsigned char>(a[i])) !=
-                std::tolower(static_cast<unsigned char>(b[i])))
-                return false;
-        }
-        return true;
-    }
-
-    static std::optional<double> parse_double_opt(const std::string &s)
-    {
-        if (s.empty()) return std::nullopt;
-        char *end = nullptr;
-        const double v = std::strtod(s.c_str(), &end);
-        if (end == s.c_str()) return std::nullopt; // no parse
-        return v;
-    }
-
-    static std::vector<std::string> split(const std::string &s, char delim)
-    {
-        std::vector<std::string> parts;
-        std::string cur;
-        for (char ch : s)
-        {
-            if (ch == delim)
-            {
-                parts.emplace_back(cur);
-                cur.clear();
-            }
-            else
-            {
-                cur.push_back(ch);
-            }
-        }
-        parts.emplace_back(cur);
-        return parts;
-    }
 
     // Parse scenario input like "[0;0;0][1;4;5][2;3;3][2.01;;4][3;3;3]"
     // - First field is time
@@ -284,7 +229,7 @@ public:
 
     void parse_inputs()
     {
-        series = parse_scenario(scenario_input, scenario_fmu::kMaxOutputs);
+        series = parse_scenario(scenario_input, kMaxOutputs);
         outputs_count = static_cast<unsigned int>(series.values.size());
         modes = parse_interpolation(interpolation_input, outputs_count);
     }
@@ -467,9 +412,9 @@ fmi2Status fmi2GetReal(fmi2Component comp,
     for (size_t i = 0; i < nvr; ++i)
     {
         const auto ref = vr[i];
-        if (ref >= scenario_fmu::kVrFirstOutput)
+        if (ref >= kVrFirstOutput)
         {
-            const unsigned int index = ref - scenario_fmu::kVrFirstOutput; // 0-based
+            const unsigned int index = ref - kVrFirstOutput; // 0-based
             if (index < model->outputs_count)
             {
                 value[i] = eval_value_at(model->series, model->modes, index, model->current_time);
@@ -545,11 +490,11 @@ fmi2Status fmi2SetString(fmi2Component comp,
     {
         const auto ref = vr[i];
         const char *val_c = value[i] ? value[i] : "";
-        if (ref == scenario_fmu::kVrScenarioInput)
+        if (ref == kVrScenarioInput)
         {
             model->scenario_input = std::string(val_c);
         }
-        else if (ref == scenario_fmu::kVrInterpolation)
+        else if (ref == kVrInterpolation)
         {
             model->interpolation_input = std::string(val_c);
         }
