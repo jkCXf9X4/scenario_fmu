@@ -14,15 +14,3 @@ target_include_directories(scenario
     ${CMAKE_CURRENT_LIST_DIR}/include_private
  
 )
-
-# target_compile_options(scenario PRIVATE -Wfatal-errors)
-
-# find_package(boost_log CONFIG REQUIRED)
-# target_link_libraries(scenario PRIVATE Boost::log)
-
-# find_package(libzip CONFIG REQUIRED)
-# target_link_libraries(scenario PRIVATE libzip::zip)
-
-# find_package(pugixml CONFIG REQUIRED)
-# target_link_libraries(scenario PRIVATE pugixml::static pugixml::pugixml)
-

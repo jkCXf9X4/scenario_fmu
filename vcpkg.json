@@ -1,0 +1,12 @@
+{
+  "name": "scenario-fmu",
+  "version-string": "0.1.0",
+  "description": "Scenario FMU library and tests",
+  "homepage": "https://github.com/jkCXf9X4/scenario_fmu",
+  "dependencies": [
+    {
+      "name": "gtest"
+    }
+  ]
+}
+
