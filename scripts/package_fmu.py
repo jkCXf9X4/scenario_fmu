@@ -34,6 +34,7 @@ import tempfile
 import uuid
 from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
+import xml.etree.ElementTree as ET
 
 
 def detect_platform_folder() -> str:
@@ -78,60 +79,88 @@ def read_project_version(repo_root: Path) -> str:
         return "0.1.0"
 
 
-def generate_model_description(model_name: str, model_id: str, guid: str, num_outputs: int, version: str) -> str:
-    # Build ModelVariables block
-    lines = []
-    lines.append("  <ModelVariables>")
-    lines.append(
-        "    <ScalarVariable name=\"scenario_input\" valueReference=\"0\" causality=\"parameter\" variability=\"tunable\">"
+
+def generate_model_description(model_name: str, model_id: str, guid: str, num_outputs: int, version: str) -> bytes:
+    root = ET.Element(
+        "fmiModelDescription",
+        attrib={
+            "fmiVersion": "2.0",
+            "modelName": model_name,
+            "guid": guid,
+            "author": "scenario_fmu",
+            "version": version,
+            "generationTool": "scenario_fmu",
+            "numberOfEventIndicators": "0",
+        },
     )
-    lines.append("      <String />")
-    lines.append("    </ScalarVariable>")
-    lines.append(
-        "    <ScalarVariable name=\"interpolation\" valueReference=\"1\" causality=\"parameter\" variability=\"tunable\">"
+
+    ET.SubElement(
+        root,
+        "CoSimulation",
+        attrib={
+            "modelIdentifier": model_id,
+            "canHandleVariableCommunicationStepSize": "true",
+            "canInterpolateInputs": "false",
+            "needsExecutionTool": "false",
+            "canBeInstantiatedOnlyOncePerProcess": "false",
+            "canNotUseMemoryManagementFunctions": "false",
+            "providesDirectionalDerivative": "false",
+        },
     )
-    lines.append("      <String />")
-    lines.append("    </ScalarVariable>")
+
+    ET.SubElement(root, "DefaultExperiment", attrib={"startTime": "0.0"})
+
+    mvars = ET.SubElement(root, "ModelVariables")
+
+    sv0 = ET.SubElement(
+        mvars,
+        "ScalarVariable",
+        attrib={
+            "name": "scenario_input",
+            "valueReference": "0",
+            "causality": "parameter",
+            "variability": "tunable",
+        },
+    )
+    ET.SubElement(sv0, "String")
+
+    sv1 = ET.SubElement(
+        mvars,
+        "ScalarVariable",
+        attrib={
+            "name": "interpolation",
+            "valueReference": "1",
+            "causality": "parameter",
+            "variability": "tunable",
+        },
+    )
+    ET.SubElement(sv1, "String")
 
     for i in range(num_outputs):
         vr = 2 + i
         idx = i + 1
-        lines.append(
-            f"    <ScalarVariable name=\"y{idx}\" valueReference=\"{vr}\" causality=\"output\">"
+        svi = ET.SubElement(
+            mvars,
+            "ScalarVariable",
+            attrib={
+                "name": f"y{idx}",
+                "valueReference": str(vr),
+                "causality": "output",
+            },
         )
-        lines.append("      <Real />")
-        lines.append("    </ScalarVariable>")
-    lines.append("  </ModelVariables>")
+        ET.SubElement(svi, "Real")
 
-    # ModelStructure indices refer to 1-based positions in ModelVariables
-    # modelVariables indices: 1:scenario_input, 2:interpolation, outputs start at 3
-    lines.append("  <ModelStructure>")
-    lines.append("    <Outputs>")
+    mstr = ET.SubElement(root, "ModelStructure")
+    outs = ET.SubElement(mstr, "Outputs")
     for i in range(num_outputs):
-        index = 3 + i
-        lines.append(f"      <Unknown index=\"{index}\"/>")
-    lines.append("    </Outputs>")
-    lines.append("  </ModelStructure>")
+        index = 3 + i  # 1-based index into ModelVariables list
+        ET.SubElement(outs, "Unknown", attrib={"index": str(index)})
 
-    xml = f"""<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<fmiModelDescription
-  fmiVersion=\"2.0\"
-  modelName=\"{model_name}\"
-  guid=\"{guid}\"
-  author=\"scenario_fmu\"
-  version=\"{version}\"
-  generationTool=\"scenario_fmu\"
-  numberOfEventIndicators=\"0\">\n\n  <CoSimulation
-    modelIdentifier=\"{model_id}\"
-    canHandleVariableCommunicationStepSize=\"true\"
-    canInterpolateInputs=\"false\"
-    needsExecutionTool=\"false\"
-    canBeInstantiatedOnlyOncePerProcess=\"false\"
-    canNotUseMemoryManagementFunctions=\"false\"
-    providesDirectionalDerivative=\"false\"/>\n\n  <DefaultExperiment startTime=\"0.0\"/>\n\n{os.linesep.join(lines)}\n\n</fmiModelDescription>\n"""
-    return xml
-
-
+    # _indent(root)
+    tree = ET.ElementTree(root)
+    ET.indent(tree, space="\t", level=0)
+    # Serialize to bytes with XML declaration
+    return ET.tostring(root, encoding="utf-8", xml_declaration=True)
 
 
 def main() -> int:
@@ -167,7 +196,7 @@ def main() -> int:
     tmp.mkdir(parents=True, exist_ok=True)
     print("- Write modelDescription.xml")
     md = generate_model_description(model_name, model_id, guid, num_outputs, version)
-    (tmp / "modelDescription.xml").write_text(md, encoding="utf-8")
+    (tmp / "modelDescription.xml").write_bytes(md)
 
     print("- Place binaries")
     bin_dir = tmp / "binaries" / platform_folder
