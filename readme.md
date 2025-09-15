@@ -11,9 +11,10 @@ This will provide higher repeatability when migrating between tools
 ## Input 
 The input is a string of values that corresponds to a csv or equivalent, this is specified as an parameter for the fmu (scenario_input). 
 
-The first one should always specify time.
-All values will be parsed as doubles
-It is acceptable to leave fields empty, the last known value will then be utilized
+- The first one should always specify time.
+- All values will be parsed as doubles
+- It is acceptable to leave fields empty, the last known value will then be utilized
+
 
 Example parameter value specifying input
 ```
@@ -22,12 +23,12 @@ Example parameter value specifying input
 
 ## Interpolation possibilities
 ```
-interpolation  = "[;L;]"
+interpolation  = "[;L;ZOH]"
 ```
-L: Linear
-C: Cubic
-ZOH: Zero order hold
-NN: Nearest Neighbor
+- L: Linear
+- C: Cubic
+- ZOH: Zero order hold
+- NN: Nearest Neighbor
 
 ## Time
 
@@ -40,12 +41,17 @@ fmi2Status fmi2DoStep(fmi2Component c, ...)
 ## Output
 
 parse all the outputs with the fmiGetReal function. 
+
+
 Value references will be the sequential number in the input order.
+
 ```
 fmiGetReal(fmi2Component c, fmi2ValueReference vr[], size_t nvr, fmi2Real value[])
 ```
 
 The model description will contain 1000 outputs but this is not a hard limit, any number of outputs can be used
+
+TODO: Add a graph of the result
 
 # Build
 
