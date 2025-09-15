@@ -55,16 +55,39 @@ TODO: Add a graph of the result
 
 # Build
 
+## Setup
+
 Uses vcpkg for dependencies
 
 ```
 git submodule init && git submodule update
-
 cmake --preset=vcpkg
-
-cmake --build build
-cmake --build build &> build.log
 ```
+
+## FMU Packaging
+
+You can package a complete FMI 2.0 Co‑Simulation FMU containing `modelDescription.xml` and the
+shared library, either via the provided CMake target or the Python helper script.
+
+- Using CMake target (recommended)
+  - Configure and build:
+    - `cmake --preset=vcpkg`
+    - `cmake --build build -j`
+  - Package FMU into `build/scenario.fmu`:
+    - `cmake --build build --target package_fmu`
+  - Control number of outputs in `modelDescription.xml` (default 1000):
+    - `cmake -S . -B build -DSCENARIO_FMU_OUTPUTS=250`
+    - then `cmake --build build --target package_fmu`
+
+- Using the Python script directly
+  - `python3 scripts/package_fmu.py
+
+  - The script generates `modelDescription.xml`, detects platform (`binaries/linux64`, `darwin64`,
+    `win32`/`win64`) and copies the built shared library (`libscenario.so`/`libscenario.dylib`/
+    `scenario.dll`). Use `--guid <uuid>` to fix the GUID (random by default).
+
+## Tests
+
 
 Build and run tests
 ```
@@ -75,5 +98,3 @@ Build and inspect .so (tested on ubuntu 22)
 ```
 cmake --build build && objdump -TC ./build/libs/scenario_fmu/libscenario.so | grep " g    DF"
 ```
-
-# Credits

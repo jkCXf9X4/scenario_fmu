@@ -7,6 +7,7 @@ find_package(GTest CONFIG REQUIRED)
 
 add_executable(scenario_tests
     basic_test.cpp
+    scenario_test.cpp
 )
 
 target_include_directories(scenario_tests
