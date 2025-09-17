@@ -25,7 +25,7 @@ from fmpy import read_model_description, simulate_fmu
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--fmu", default="build/scenario.fmu", help="Path to .fmu file")
-    ap.add_argument("--scenario-input", default="[0;0;0][1;4;5][2;3;3][2.5;;4][3;3;3]", help="Scenario input string, e.g. '[0;0;0][1;4;5]' ...")
+    ap.add_argument("--scenario-input", default="[0;0;0][1;4;5][2;3;3][2.5;;4][3;4;3]", help="Scenario input string, e.g. '[0;0;0][1;4;5]' ...")
     ap.add_argument("--interpolation", default="[L;L;ZOH]", help="Interpolation string, e.g. '[L;L;ZOH]' (default Linear)")
     ap.add_argument("--start", type=float, default=0.0, help="Start time")
     ap.add_argument("--stop", type=float, default=10.0, help="Stop time")
@@ -91,7 +91,7 @@ def main() -> int:
         import numpy as np
         t = res['time']
         plt.figure(figsize=(10, 5))
-        for name in output_names:
+        for name in ["time"] + output_names:
             y = res[name]
             plt.plot(t, y, label=name)
         plt.xlabel('time [s]')

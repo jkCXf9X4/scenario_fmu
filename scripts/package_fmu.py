@@ -12,7 +12,7 @@ Usage:
     --out build/scenario.fmu \
     --model-id scenario \
     --model-name ScenarioFMU \
-    --num-outputs 1000
+    --output-names []
 
 Notes:
   - Value references:
@@ -79,7 +79,7 @@ def read_project_version(repo_root: Path) -> str:
 
 
 
-def generate_model_description(model_name: str, model_id: str, guid: str, num_outputs: int, version: str) -> bytes:
+def generate_model_description(model_name: str, model_id: str, guid: str, output_names: list[str], version: str) -> bytes:
     root = ET.Element(
         "fmiModelDescription",
         attrib={
@@ -136,15 +136,14 @@ def generate_model_description(model_name: str, model_id: str, guid: str, num_ou
     )
     ET.SubElement(sv1, "String", attrib={"start":"[]"})
 
-    for i in range(num_outputs):
-        vr = 2 + i
-        idx = i + 1
+
+    for i, name in enumerate(output_names):
         svi = ET.SubElement(
             mvars,
             "ScalarVariable",
             attrib={
-                "name": f"y{idx}",
-                "valueReference": str(vr),
+                "name": f"{name}",
+                "valueReference": str(i+2),
                 "causality": "output",
             },
         )
@@ -152,7 +151,7 @@ def generate_model_description(model_name: str, model_id: str, guid: str, num_ou
 
     mstr = ET.SubElement(root, "ModelStructure")
     outs = ET.SubElement(mstr, "Outputs")
-    for i in range(num_outputs):
+    for i in range(len(output_names)):
         index = 3 + i  # 1-based index into ModelVariables list
         ET.SubElement(outs, "Unknown", attrib={"index": str(index)})
 
@@ -168,18 +167,25 @@ def main() -> int:
     ap.add_argument("--out", default="scenario.fmu", help="Output .fmu path")
     ap.add_argument("--model-id", default="scenario", help="FMI modelIdentifier (also library base name)")
     ap.add_argument("--model-name", default="ScenarioFMU", help="Human-readable modelName")
-    ap.add_argument("--num-outputs", type=int, default=1000, help="Number of real outputs to expose")
+    ap.add_argument("-n", "--output-names", type=str, nargs="+", default=[], help="Output variable names")
     ap.add_argument("--guid", default=None, help="GUID to embed (default: random uuid4)")
     args = ap.parse_args()
 
     repo_root = Path(__file__).resolve().parents[1]
     build_dir = Path(args.build_dir).resolve()
-    out_fmu = Path(args.out).resolve()
+    out_fmu = build_dir / args.out
     model_id = args.model_id
     model_name = args.model_name
-    num_outputs = max(0, int(args.num_outputs))
+    if not args.output_names:
+        args.output_names = [f"y{i+1}" for i in range(1000)]
+    
+    args.output_names = ["t"] + args.output_names # Always add the local time
+    
+    num_outputs =  len(args.output_names)
     guid = args.guid or str(uuid.uuid4())
     version = read_project_version(repo_root)
+
+    # print(f"{args.output_names=}")
 
     print("Locate shared library")
     lib_src = default_built_library(build_dir, model_id)
@@ -190,11 +196,12 @@ def main() -> int:
     platform_folder = detect_platform_folder()
     lib_target_name = lib_name_for(model_id).removeprefix("lib")
 
+
     print("Generate fmu structure and content")
     tmp = build_dir / "fmu_tmp"
     tmp.mkdir(parents=True, exist_ok=True)
     print("- Write modelDescription.xml")
-    md = generate_model_description(model_name, model_id, guid, num_outputs, version)
+    md = generate_model_description(model_name, model_id, guid, args.output_names, version)
     (tmp / "modelDescription.xml").write_bytes(md)
 
     print("- Place binaries")
@@ -219,6 +226,9 @@ def main() -> int:
     print(f"  modelName:      {model_name}")
     print(f"  guid:           {guid}")
     print(f"  outputs:        {num_outputs}")
+    # print(f"  outputs:        {args.output_names}")
+    if out_fmu.exists():
+        print("Successfully created")
     return 0
 
 

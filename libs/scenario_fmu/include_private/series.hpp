@@ -123,6 +123,8 @@ namespace
         }
     }
 
+    static int counter = 0;
+
     static double eval_value_at(SeriesData &sd, double time)
     {
         // empty or before first time, do nothing
@@ -132,16 +134,17 @@ namespace
         }
 
         // interpolation territory
-        for (size_t index = sd.access_index + 1; index < sd.size - 1; ++index)
+        for (size_t index = sd.access_index; index < sd.size - 1; ++index)
         {
             auto t0 = sd.times[index];
             auto v0 = sd.values[index];
+
             auto t1 = sd.times[index + 1];
             auto v1 = sd.values[index + 1];
 
-            sd.access_index = index;
+            // std::cout << "Searching" << counter++ << std::endl;
 
-            // std::cout << "Searching" << std::endl;
+            sd.access_index = index;
 
             if (t0 == time)
             {

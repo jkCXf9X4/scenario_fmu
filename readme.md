@@ -135,6 +135,9 @@ Use the helper to run the FMU with FMPy, capture a CSV, and optionally a plot.
 - Example:
 ```
 ./scripts/run_fmu.py
+
+# build, package and run
+cmake --build build && ./scripts/package_fmu.py && ./scripts/run_fmu.py
 ```
 see --help for input variations, default is to run the default build
 

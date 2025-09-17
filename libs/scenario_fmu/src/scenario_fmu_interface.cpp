@@ -205,8 +205,11 @@ fmi2Status fmi2GetReal(fmi2Component comp,
     for (size_t i = 0; i < nvr; ++i)
     {
         const unsigned int index = vr[i] - vrFirstOutput; // 0-based
-
-        if (index >= 0 && index < model->outputs_count)
+        if (index == 0)
+        {
+            value[i] = model->current_time;
+        }
+        else if (index > 0 && index < model->outputs_count)
         {
             value[i] = eval_value_at(model->series[index], model->current_time);
         }
