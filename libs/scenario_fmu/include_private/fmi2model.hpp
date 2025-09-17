@@ -5,10 +5,10 @@
 #include <string>
 #include <cstdint>
 
+// not part of the standard
 namespace FMI2
 {
 
-    // not part of the standard
     typedef enum
     {
         StartAndEnd = 1 << 0,

@@ -25,12 +25,12 @@ from fmpy import read_model_description, simulate_fmu
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--fmu", default="build/scenario.fmu", help="Path to .fmu file")
-    ap.add_argument("--scenario-input", default="[0;0;0][1;4;5][2;3;3][2.01;;4][3;3;3]", help="Scenario input string, e.g. '[0;0;0][1;4;5]' ...")
-    ap.add_argument("--interpolation", default="[;L;ZOH]", help="Interpolation string, e.g. '[;L;ZOH]' (default ZOH)")
+    ap.add_argument("--scenario-input", default="[0;0;0][1;4;5][2;3;3][2.5;;4][3;3;3]", help="Scenario input string, e.g. '[0;0;0][1;4;5]' ...")
+    ap.add_argument("--interpolation", default="[L;L;ZOH]", help="Interpolation string, e.g. '[L;L;ZOH]' (default Linear)")
     ap.add_argument("--start", type=float, default=0.0, help="Start time")
     ap.add_argument("--stop", type=float, default=10.0, help="Stop time")
     ap.add_argument("--step", type=float, default=0.01, help="Communication step / output interval")
-    ap.add_argument("--out-dir", default="run_output", help="Directory to write CSV and plots")
+    ap.add_argument("--out-dir", default="reference_results", help="Directory to write CSV and plots")
     args = ap.parse_args()
 
     fmu_path = Path(args.fmu)
@@ -47,16 +47,17 @@ def main() -> int:
     # Sort by valueReference to align y1..yN
     # only use the number of outputs that are parameterized
     outputs.sort(key=lambda v: getattr(v, 'valueReference', 0))
-    parameterized_variables = len(args.scenario_input.removeprefix("[").removesuffix("]") .split("][")[0].split(";"))-1
+    parameterized_variables = len(args.scenario_input.removeprefix("[").removesuffix("]") .split("][")[0].split(";"))
 
     output_names = [v.name for v in outputs[:parameterized_variables]]
+    print(f"{output_names=}")
 
     # Start values for string parameters
     start_values = {
         'scenario_input': args.scenario_input,
         'interpolation': args.interpolation,
     }
-    print(f"start_values: {start_values}")
+    print(f"{start_values=}")
 
     # Run co-simulation
     res = simulate_fmu(

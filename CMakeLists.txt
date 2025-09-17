@@ -14,6 +14,14 @@ message("CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}\n")
 
 set(CMAKE_CXX_STANDARD 20)
 
+# Optimize Release builds
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG")
+
+# No optimization for debug builds
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g -fno-omit-frame-pointer")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g -fno-omit-frame-pointer")
+
 add_subdirectory(libs)
 
 # Tests

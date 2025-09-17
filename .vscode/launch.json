@@ -1,0 +1,44 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            // Debug GoogleTest executable built by CMake
+            "name": "Debug scenario_tests",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/test/scenario_tests",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "--gtest_filter=${input:gtest_filter}"
+            ],
+            "stopAtEntry": false,
+            "environment": [
+                {
+                    "name": "LD_LIBRARY_PATH",
+                    "value": "${workspaceFolder}/build/libs/scenario_fmu:${env:LD_LIBRARY_PATH}"
+                }
+            ],
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+
+    ],
+    "inputs": [
+        {
+            "id": "gtest_filter",
+            "type": "promptString",
+            "description": "GoogleTest filter (e.g. ScenarioFMU.*). Use * for all.",
+            "default": "*"
+        }
+    ]
+}

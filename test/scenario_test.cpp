@@ -4,35 +4,129 @@ extern "C" {
 #include "fmi2.h"
 }
 
-#include "scenario_fmu.hpp"
-
-TEST(ScenarioFMU, ParseAndInterpolate)
+::testing::AssertionResult setup(fmi2Component* out)
 {
     fmi2CallbackFunctions cbs{};
     auto comp = fmi2Instantiate("inst", fmi2CoSimulation, "guid", nullptr, &cbs, fmiFalse, fmiFalse);
-    ASSERT_NE(nullptr, comp);
+    if (comp == nullptr)
+    {
+        return ::testing::AssertionFailure() << "fmi2Instantiate returned nullptr";
+    }
 
     // Provide scenario input and interpolation
-    const fmi2ValueReference vr_in[2] = { scenario_fmu::kVrScenarioInput, scenario_fmu::kVrInterpolation };
-    const fmi2String values[2] = { "[0;0;0][1;4;5][2;3;3][2.01;;4][3;3;3]", "[;L;ZOH]" };
-    ASSERT_EQ(fmi2OK, fmi2SetString(comp, vr_in, 2, values));
+    const fmi2ValueReference vr_in[2] = {0, 1};
+    const fmi2String values[2] = {"[0;0;0][1;4;5][2;3;3][2.5;;4][3;3;3]", "[L;L;ZOH]"};
+    if (fmi2SetString(comp, vr_in, 2, values) != fmi2OK)
+    {
+        fmi2FreeInstance(comp);
+        return ::testing::AssertionFailure() << "fmi2SetString failed";
+    }
 
-    ASSERT_EQ(fmi2OK, fmi2EnterInitializationMode(comp));
-    ASSERT_EQ(fmi2OK, fmi2ExitInitializationMode(comp));
+    if (fmi2EnterInitializationMode(comp) != fmi2OK)
+    {
+        fmi2FreeInstance(comp);
+        return ::testing::AssertionFailure() << "fmi2EnterInitializationMode failed";
+    }
+    if (fmi2ExitInitializationMode(comp) != fmi2OK)
+    {
+        fmi2FreeInstance(comp);
+        return ::testing::AssertionFailure() << "fmi2ExitInitializationMode failed";
+    }
 
-    // Step to time 1.5
-    ASSERT_EQ(fmi2OK, fmi2DoStep(comp, 1.0, 0.5, fmiTrue));
+    *out = comp;
+    return ::testing::AssertionSuccess();
+}
 
-    // Query two outputs
-    const fmi2ValueReference vr_out[2] = { scenario_fmu::kVrFirstOutput + 0, scenario_fmu::kVrFirstOutput + 1 };
-    fmi2Real out_vals[2] = {0.0, 0.0};
-    ASSERT_EQ(fmi2OK, fmi2GetReal(comp, vr_out, 2, out_vals));
+TEST(ScenarioFMU, ParseOnTime)
+{
+    fmi2Component comp = nullptr;
+    ASSERT_TRUE(setup(&comp));
 
-    // First output uses Linear between (1,4) and (2,3) => 3.5 at 1.5
-    EXPECT_NEAR(3.5, out_vals[0], 1e-9);
-    // Second output uses ZOH, last <= 1.5 is 5 at t=1
-    EXPECT_NEAR(5.0, out_vals[1], 1e-9);
+    const fmi2ValueReference vr_out[3] = {2, 3, 4};
+    fmi2Real out_vals[3] = {0.0, 0.0, 0.0};
+    
+    // Step to time 1.0
+    ASSERT_EQ(fmi2OK, fmi2DoStep(comp, 0.5, 0.5, fmiTrue));
+    ASSERT_EQ(fmi2OK, fmi2GetReal(comp, vr_out, 3, out_vals));
+
+    EXPECT_NEAR(1, out_vals[0], 1e-9);
+    EXPECT_NEAR(4, out_vals[1], 1e-9);
+    EXPECT_NEAR(5, out_vals[2], 1e-9);
 
     fmi2FreeInstance(comp);
 }
+
+TEST(ScenarioFMU, ParseInterpolate)
+{
+    fmi2Component comp = nullptr;
+    ASSERT_TRUE(setup(&comp));
+
+    const fmi2ValueReference vr_out[3] = {2, 3, 4};
+    fmi2Real out_vals[3] = {0.0, 0.0, 0.0};
+
+    // Step to time 1.5
+    ASSERT_EQ(fmi2OK, fmi2DoStep(comp, 1.0, 0.5, fmiTrue));
+    ASSERT_EQ(fmi2OK, fmi2GetReal(comp, vr_out, 3, out_vals));
+
+    // First is time, its linear
+    EXPECT_NEAR(1.5, out_vals[0], 1e-9);
+    // Second output uses Linear between (1,4) and (2,3) => 3.5 at 1.5
+    EXPECT_NEAR(3.5, out_vals[1], 1e-9);
+    // Third output uses ZOH, last <= 1.5 is 5 at t=1
+    EXPECT_NEAR(5, out_vals[2], 1e-9);
+
+    fmi2FreeInstance(comp);
+}
+
+TEST(ScenarioFMU, ParseExtrapolateAfter)
+{
+    fmi2Component comp = nullptr;
+    ASSERT_TRUE(setup(&comp));
+
+    const fmi2ValueReference vr_out[3] = {2, 3, 4};
+    fmi2Real out_vals[3] = {0.0, 0.0, 0.0};
+
+    // Step to time 5.5
+    ASSERT_EQ(fmi2OK, fmi2DoStep(comp, 5, 0.5, fmiTrue));
+    ASSERT_EQ(fmi2OK, fmi2GetReal(comp, vr_out, 3, out_vals));
+
+    // First is time, its linear
+    EXPECT_NEAR(3, out_vals[0], 1e-9);
+    // Second output uses Linear between (1,4) and (2,3) => 3.5 at 1.5
+    EXPECT_NEAR(3, out_vals[1], 1e-9);
+    // Third output uses ZOH, last <= 1.5 is 5 at t=1
+    EXPECT_NEAR(3, out_vals[2], 1e-9);
+
+    fmi2FreeInstance(comp);
+}
+
+TEST(ScenarioFMU, SearchOptimization)
+{
+    fmi2Component comp = nullptr;
+    ASSERT_TRUE(setup(&comp));
+
+    const fmi2ValueReference vr_out[3] = {2, 3, 4};
+    fmi2Real out_vals[3] = {0.0, 0.0, 0.0};
+
+    // Step to time 5.5
+    ASSERT_EQ(fmi2OK, fmi2DoStep(comp, 0.5, 0.5, fmiTrue));
+    ASSERT_EQ(fmi2OK, fmi2GetReal(comp, vr_out, 3, out_vals));
+    
+    ASSERT_EQ(fmi2OK, fmi2DoStep(comp, 2.5, 0.5, fmiTrue));
+    ASSERT_EQ(fmi2OK, fmi2GetReal(comp, vr_out, 3, out_vals));
+    
+    ASSERT_EQ(fmi2OK, fmi2DoStep(comp, 2.5, 0.5, fmiTrue));
+    ASSERT_EQ(fmi2OK, fmi2GetReal(comp, vr_out, 3, out_vals));
+
+    // First is time, its linear
+    EXPECT_NEAR(3, out_vals[0], 1e-9);
+    // Second output uses Linear between (1,4) and (2,3) => 3.5 at 1.5
+    EXPECT_NEAR(3, out_vals[1], 1e-9);
+    // Third output uses ZOH, last <= 1.5 is 5 at t=1
+    EXPECT_NEAR(3, out_vals[2], 1e-9);
+
+    fmi2FreeInstance(comp);
+}
+
+
 
