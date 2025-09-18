@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling>=1.18.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "scenario-fmu-generator"
+version = "0.1.0"
+description = "Utilities to package and run Scenario FMUs (FMI 2.0 Co-Simulation)"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+  { name = "Erik Rosenlund" }
+]
+keywords = ["FMI", "FMU", "co-simulation", "simulation", "FMPy"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Topic :: Scientific/Engineering",
+]
+
+dependencies = [
+]
+
+[project.urls]
+Repository = "https://github.com/jkCXf9X4/scenario_fmu"
+
+[project.scripts]
+scenario-fmu-package = "scenario_fmu_generator.fmu_packager:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/scenario_fmu_generator"]
+include = [
+  "src/scenario_fmu_generator/_binaries/**",
+]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "src/scenario_fmu_generator/_binaries/**",
+]

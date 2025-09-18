@@ -8,6 +8,8 @@ The reason is to enable the inclusion of synthetic data within an SSP (https://s
 This will provide higher repeatability when migrating between tools 
 
 
+Easiest utilized with the python package
+
 ## Input 
 The input is a string of values that corresponds to a csv or equivalent, this is specified as an parameter for the fmu (scenario_input). 
 
@@ -91,28 +93,11 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 rm -rf build
 ```
 
-
 ## Build library
 
 ```
 cmake --build build -j
 ```
-
-## FMU Packaging
-
-You can package a complete FMI 2.0 Co‑Simulation FMU containing `modelDescription.xml` and the
-shared library via the Python helper script.
-
-Package FMU into `build/scenario.fmu`:
-```
-./scripts/package_fmu.py
-```
-see --help for input options for the scripts
-
-The script generates `modelDescription.xml`, detects platform (`binaries/linux64`, `darwin64`,
-`win32`/`win64`) and copies the built shared library (`libscenario.so`/`libscenario.dylib`/
-`scenario.dll`). Use `--guid <uuid>` to fix the GUID (random by default).
-
 
 ## Tests
 
@@ -127,20 +112,50 @@ Build and inspect .so (tested on ubuntu 22)
 cmake --build build && objdump -TC ./build/libs/scenario_fmu/libscenario.so | grep " g    DF"
 ```
 
+
+## FMU Packaging
+
+You can package a complete FMI 2.0 Co‑Simulation FMU containing `modelDescription.xml` and the shared library via the installed CLI
+
+Using the installable CLI (recommended):
+```
+# one‑time local install of Python tools
+`pip install -e ./python` and optionally `pip install 'scenario-fmu-generator'`
+
+# package FMU into build/scenario.fmu
+scenario-fmu-package --out scenario.fmu
+```
+
+This generates `modelDescription.xml`, detect platform (`binaries/linux64`, `darwin64`,
+`win32`/`win64`) and copy the built shared library (`libscenario.so`/`libscenario.dylib`/
+`scenario.dll`).
+
 ## Run with FMPy
 
-Use the helper to run the FMU with FMPy, capture a CSV, and optionally a plot.
+Use the CLI to run the FMU with FMPy, capture a CSV, and optionally a plot if matplotlib is availible.
 
-- Requirements: `pip install fmpy matplotlib`
-- Example:
 ```
 ./scripts/run_fmu.py
+```
 
 # build, package and run
-cmake --build build && ./scripts/package_fmu.py && ./scripts/run_fmu.py
-```
-see --help for input variations, default is to run the default build
+cmake --build build && scenario-fmu-package && ./scripts/run_fmu.py
+
+See `--help` for input variations; defaults target the default build.
 
 - Outputs:
-  - CSV: `build/run/results.csv`
-  - Plot: `build/run/results.png` (if matplotlib available)
+  - CSV: `reference_results/results.csv` 
+  - Plot: `reference_results/results.png`
+
+
+## Python Tools (Packaging & CLI)
+
+The Python utilities live in `python/` and can be installed locally:
+
+To build distributable (wheel/sdist) for publishing:
+
+```
+cd python
+python -m build
+```
+By default, CMake copies the built shared library into the Python package.
