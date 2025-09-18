@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <format>
 #include <iostream>
+#include <sstream>
+#include <locale>
 
 namespace
 {
@@ -33,17 +35,51 @@ namespace
         return Interpolation::Linear;
     }
 
+    static std::string interpolation_to_string(Interpolation i)
+    {
+        switch (i)
+        {
+        case Interpolation::Linear:
+            return "L";
+        case Interpolation::Zoh:
+            return "ZOH";
+        case Interpolation::NearestNeighbor:
+            return "NN";
+        case Interpolation::Cubic:
+            return "C";
+        default:
+            return "L";
+        }
+    }
+
     struct SeriesData
     {
         Interpolation interpolation = Interpolation::Linear;
         size_t access_index = 0; // store last access for reference
         size_t size = 0;         // store last access for reference
+        std::string name;
         std::vector<double> times;
         std::vector<double> values;
+
+        // Convert a SeriesData back into the serialized line format:
+        // name; <InterpToken>; t0,v0; t1,v1; ...
+        std::string to_string()
+        {
+            std::ostringstream oss;
+            // Use classic locale to enforce '.' as decimal separator
+            oss.imbue(std::locale::classic());
+
+            oss << name << "; " << interpolation_to_string(interpolation);
+            const size_t n = size;
+            for (size_t i = 0; i < n && i < times.size() && i < values.size(); ++i)
+            {
+                oss << "; " << times[i] << "," << values[i];
+            }
+            return oss.str();
+        }
     };
 
-    // Parse scenario input like "[0;0;0][1;4;5][2;3;3][2.01;;4][3;3;3]"
-    // - First field is time
+    // Parse scenario input
     static std::vector<SeriesData> parse_scenario(std::string input)
     {
         if (input.empty())
@@ -51,76 +87,34 @@ namespace
             throw std::runtime_error("No scenario found, make sure to set parameters before ExitInitializationMode");
         }
 
-        input.erase(0, 1);                  // remove '['
-        input.erase(input.length() - 1, 1); // remove ']'
-        auto groups = split(input, "][");
+        auto groups = split(input, "\n");
 
-        size_t nr_variables = split(groups[0], ";").size();
-        std::vector<SeriesData> out(nr_variables);
+        size_t nr_variables = groups.size();
+        std::vector<SeriesData> out;
 
-        std::vector<std::vector<std::optional<double>>> temp_rows;
+        std::vector<std::vector<double>> temp_rows;
         for (const auto &g : groups)
         {
             auto fields = split(g, ";");
-            if (nr_variables != fields.size())
-            {
-                throw std::runtime_error(std::format("Field {} has the wrong number of variables: Expected {}, got {}", g, nr_variables, fields.size()));
-            }
-            auto time = parse_double_opt(trim(fields[0]));
-            if (!time.has_value())
-            {
-                throw std::runtime_error("Time must be specified for all scenario values");
-            }
 
-            for (int variable = 0; variable < nr_variables; ++variable)
+            SeriesData d;
+            d.name = trim(fields[0]);
+            d.interpolation = interpolation_from_string(trim(fields[1]));
+
+            for (int field_index = 2; field_index < fields.size(); field_index++)
             {
-                auto var = parse_double_opt(trim(fields[variable]));
-                // std::cout << "Parse scenario (" << variable << ") ";
-                if (var.has_value())
-                {
-                    out[variable].times.push_back(time.value());
-                    out[variable].values.push_back(var.value());
-                    out[variable].size += 1;
-                    // std::cout << time.value() << ":" << var.value();
-                }
-                // std::cout << std::endl;
+                auto coordinates = split(fields[field_index], ",");
+                auto x = parse_double_opt(trim(coordinates[0])).value();
+                auto y = parse_double_opt(trim(coordinates[1])).value();
+                d.times.push_back(x);
+                d.values.push_back(y);
+                d.size += 1;
             }
+            // std::cout << d.to_string() << std::endl;
+            out.push_back(std::move(d));
         }
+
         return out;
-    }
-
-    // Parses interpolation string like "[L;L;ZOH]" where first entry (time) is ignored,
-    // returning one mode per output column.
-    static void parse_interpolation(std::string s, std::vector<SeriesData> &series)
-    {
-        if (s.empty())
-        {
-            // use default
-            return;
-        }
-
-        s.erase(0, 1);              // remove '['
-        s.erase(s.length() - 1, 1); // remove ']'
-        auto fields = split(s, ";");
-
-        if (fields.size() != series.size())
-        {
-            throw std::runtime_error("Variables and interpolation options must be same size");
-        }
-
-        for (size_t i = 0; i < fields.size(); ++i)
-        {
-            const std::string tok = trim(fields[i]);
-            if (tok.empty())
-            {
-                series[i].interpolation = Interpolation::Linear;
-            }
-            else
-            {
-                series[i].interpolation = interpolation_from_string(tok);
-            }
-            // std::cout << "interpolation: " << i << " " << series[i].interpolation << std::endl;
-        }
     }
 
     static int counter = 0;

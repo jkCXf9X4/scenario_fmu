@@ -22,14 +22,10 @@ namespace
 {
     // Value references for parameters
     inline constexpr unsigned int vrScenarioInput = 0;
-    inline constexpr unsigned int vrInterpolationInput = 1;
 
     // - Outputs start at this value reference and continue sequentially.
     // time is the first ouput
-    inline constexpr unsigned int vrTimeOutut = 2;
-    inline constexpr unsigned int vrFirstOutput = 2;
-
-    inline constexpr unsigned int kMaxOutputs = 1000;
+    inline constexpr unsigned int vrFirstOutput = 1;
 
     class Model : public FMI2::fmi2Model
     {
@@ -53,11 +49,10 @@ namespace
 
         // Parameters
         std::string scenario_input;      // raw string
-        std::string interpolation_input; // raw string
 
         // Parsed
         std::vector<SeriesData> series;
-        unsigned int outputs_count; // number of available outputs (<= kMaxOutputs)
+        unsigned int outputs_count;
 
         // Time state
         double current_time;
@@ -135,7 +130,6 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component comp)
 
     model->series = parse_scenario(model->scenario_input);
     model->outputs_count = static_cast<unsigned int>(model->series.size());
-    parse_interpolation(model->interpolation_input, model->series);
 
     model->state = FMI2::StepComplete;
     return fmi2OK;
@@ -172,10 +166,6 @@ fmi2Status fmi2SetString(fmi2Component comp,
         {
             model->scenario_input = std::string(val_c);
         }
-        else if (ref == vrInterpolationInput)
-        {
-            model->interpolation_input = std::string(val_c);
-        }
     }
     return fmi2OK;
 }
@@ -205,11 +195,7 @@ fmi2Status fmi2GetReal(fmi2Component comp,
     for (size_t i = 0; i < nvr; ++i)
     {
         const unsigned int index = vr[i] - vrFirstOutput; // 0-based
-        if (index == 0)
-        {
-            value[i] = model->current_time;
-        }
-        else if (index > 0 && index < model->outputs_count)
+        if (index >= 0 && index < model->outputs_count)
         {
             value[i] = eval_value_at(model->series[index], model->current_time);
         }

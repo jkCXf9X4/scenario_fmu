@@ -21,7 +21,6 @@ class ScenarioFmuPackager:
         self.version = __version__
 
         # Always add local time as first output
-        self.time_variables = [Variable("t", "L", [[0.0, 0.0], [1000000, 1000000]])]
         # Default
         self.use_default = True
         self.variables = [
@@ -42,8 +41,8 @@ class ScenarioFmuPackager:
 
         self.variables += variable
 
-    def build(self, output: str):
-        output = Path(output)
+    def build(self, output_: str):
+        output = Path(output_)
 
         print("Locate shared library")
         lib_src = packaged_library_path(self.model_id)
@@ -53,10 +52,8 @@ class ScenarioFmuPackager:
             print(f"error: shared library not found. Tried {lib_src}", file=sys.stderr)
             return 2
 
-        variables = self.time_variables + self.variables
-
         md = generate_model_description(
-            self.model_name, self.model_id, self.guid, variables, self.version
+            self.model_name, self.model_id, self.guid, self.variables, self.version
         )
 
         print("Generate fmu structure and content")
@@ -88,7 +85,7 @@ class ScenarioFmuPackager:
         print(f"  modelIdentifier: {self.model_id}")
         print(f"  modelName:      {self.model_name}")
         print(f"  guid:           {self.guid}")
-        print(f"  outputs:        {len(variables)}")
+        print(f"  outputs:        {len(self.variables)}")
         if output.exists():
             print("Successfully created")
         return True

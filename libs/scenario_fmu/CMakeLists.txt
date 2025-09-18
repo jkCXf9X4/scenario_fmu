@@ -37,7 +37,7 @@ else()
   set(PLATFORM_ "linux64")
 endif()
 
-set(PY_BINARY_FOLDER "${CMAKE_SOURCE_DIR}/python/src/scenario_fmu_tools/_binaries/${PLATFORM_}")
+set(PY_BINARY_FOLDER "${CMAKE_SOURCE_DIR}/python/src/scenario_fmu_generator/_binaries/${PLATFORM_}")
 
 add_custom_command(TARGET scenario POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory "${PY_BINARY_FOLDER}"

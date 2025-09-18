@@ -50,9 +50,17 @@ def main() -> int:
     output_names = [v.name for v in outputs]
     print(f"output_names={output_names}")
 
+    parameters = [
+        v for v in md.modelVariables if getattr(v, "causality", None) == "parameter"
+    ]
+    print(f"{parameters=}")
+
     start_values = {}
     if args.scenario_input:
         start_values = {"scenario_input": args.scenario_input}
+    else:
+        start_values = {parameters[0].name : parameters[0].start}
+        pass
 
     print(f"start_values={start_values}")
 

@@ -125,7 +125,7 @@ You can:
 - package a complete FMI 2.0 Co‑Simulation FMU containing `modelDescription.xml` and the shared library via the installed CLI
 - Generate custom parameter sets for the fmus
 
-More info in the python package readme [./python/README.md]
+More info in the [python package readme](./python/README.md)
 
 The Python utilities live in `python/` and can be installed locally:
 ```

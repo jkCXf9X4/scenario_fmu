@@ -28,9 +28,9 @@ This generates `modelDescription.xml`, detect platform (`binaries/linux64`, `dar
 scenario-fmu-package --out scenario.fmu
 
 # Custom fmu with default behavior
-scenario-fmu-package --out ./build/scenario.fmu -s "var1;L;0,0;1,0.5;2,4;3,2
-var2;ZOH;0,0;1,0.5;2,4;3,2
-var2;NN;0,0;1,0.5;2,4;3,2"
+scenario-fmu-package --out ./build/scenario.fmu -s "var1; L; 1,0; 3,0.5; 5,4; 9,2
+var2; ZOH; 2,0; 3,0.5; 5,4; 9,2
+var3; NN; 0,0; 1,0.5; 2,4; 3,2"
 ```
 
 ### Build the ssv
@@ -38,9 +38,9 @@ var2;NN;0,0;1,0.5;2,4;3,2"
 Create an SSP parameter set to be used with the scenario fmu:
 
 ```
-scenario-fmu-ssv --out ./build/scenario.ssv -s "var1;L;1,0;3,0.5;5,4;9,2
-var2;ZOH;2,0;3,0.5;5,4;9,2
-var2;NN;0,0;1,0.5;2,4;3,2"
+scenario-fmu-ssv --out ./build/scenario.ssv -s "var1; L; 1,2; 3,0.5; 4,3; 7,2
+var2; ZOH; 2,2; 3,0.5; 5,5; 9,2
+var3; NN; 0,0; 1,0.5; 2,4; 3,2"
 ```
 
 ## Python Tools (Packaging & CLI)
