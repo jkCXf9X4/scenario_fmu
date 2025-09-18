@@ -27,7 +27,8 @@ dependencies = [
 Repository = "https://github.com/jkCXf9X4/scenario_fmu"
 
 [project.scripts]
-scenario-fmu-package = "scenario_fmu_generator.fmu_packager:main"
+scenario-fmu-package = "scenario_fmu_generator.cli_fmu_packager:main"
+scenario-fmu-ssv = "scenario_fmu_generator.cli_ssp_params:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/scenario_fmu_generator"]

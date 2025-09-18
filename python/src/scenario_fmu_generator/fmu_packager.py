@@ -1,4 +1,3 @@
-import argparse
 import os
 import shutil
 import sys
@@ -14,33 +13,38 @@ from .utils import detect_platform_folder, lib_name_for, packaged_library_path
 from .variable import Variable, Variables
 
 
-class ScenarioFmuBuilder:
-    def __init__(
-        self, output: str, model_id: str, model_name: str, guid: str, version: str
-    ):
-        self.output = Path(output)
+class ScenarioFmuPackager:
+    def __init__(self, model_id: str, model_name: str, guid: str):
         self.model_id = model_id
         self.model_name = model_name
         self.guid = guid or str(uuid.uuid4())
-        self.version = version
+        self.version = __version__
 
         # Always add local time as first output
-        self.variables = [Variable("t", "L", [[0.0, 0.0], [1000000, 1000000]])]
-
+        self.time_variables = [Variable("t", "L", [[0.0, 0.0], [1000000, 1000000]])]
+        # Default
+        self.use_default = True
+        self.variables = [
+            Variable(f"y{i + 1}", "ZOH", [[0.0, 0.0]]) for i in range(1000)
+        ]
 
     def add_raw(self, scenario_data: str):
-
-        if scenario_data:
-            self.variables = Variables.from_string(scenario_data)
-        else:
-            # Only the name is used
-            self.variables += [Variable(f"y{i + 1}", "ZOH", [[0.0, 0.0]]) for i in range(1000)]
+        if self.use_default:
+            self.variables = []
+            self.use_default = False
+    
+        self.variables += Variables.from_string(scenario_data)
 
     def add_variable(self, variable: Variable):
+        if self.use_default:
+            self.variables = []
+            self.use_default = False
+
         self.variables += variable
 
+    def build(self, output: str):
+        output = Path(output)
 
-    def build(self):
         print("Locate shared library")
         lib_src = packaged_library_path(self.model_id)
         if lib_src.exists():
@@ -49,8 +53,10 @@ class ScenarioFmuBuilder:
             print(f"error: shared library not found. Tried {lib_src}", file=sys.stderr)
             return 2
 
+        variables = self.time_variables + self.variables
+
         md = generate_model_description(
-            self.model_name, self.model_id, self.guid, self.variables, self.version
+            self.model_name, self.model_id, self.guid, variables, self.version
         )
 
         print("Generate fmu structure and content")
@@ -67,8 +73,8 @@ class ScenarioFmuBuilder:
             shutil.copy2(lib_src, bin_dir / lib_target_name)
 
             print("- Pack zip")
-            self.output.parent.mkdir(parents=True, exist_ok=True)
-            with ZipFile(self.output, "w", compression=ZIP_DEFLATED) as zf:
+            output.parent.mkdir(parents=True, exist_ok=True)
+            with ZipFile(output, "w", compression=ZIP_DEFLATED) as zf:
                 print("-- Add modelDescription.xml")
                 zf.write(tmp / "modelDescription.xml", arcname="modelDescription.xml")
                 print("-- Add binaries")
@@ -78,55 +84,11 @@ class ScenarioFmuBuilder:
                         arc = p.relative_to(tmp)
                         zf.write(p, arcname=str(arc))
 
-        print(f"Created FMU: {self.output}")
+        print(f"Created FMU: {output}")
         print(f"  modelIdentifier: {self.model_id}")
         print(f"  modelName:      {self.model_name}")
         print(f"  guid:           {self.guid}")
-        print(f"  outputs:        {len(self.variables)}")
-        if self.output.exists():
+        print(f"  outputs:        {len(variables)}")
+        if output.exists():
             print("Successfully created")
         return True
-
-
-"""
-Package the Scenario FMU as a valid FMI 2.0 Co-Simulation FMU (.fmu).
-
-- Generates modelDescription.xml with configurable outputs.
-- Copies the built shared library to binaries/<platform>/.
-
-CLI entry point: `scenario-fmu-package`.
-"""
-
-
-def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument(
-        "--out",
-        default="./build/scenario.fmu",
-        help="Output fmu path (relative to build dir if not absolute)",
-    )
-    ap.add_argument(
-        "--model-id",
-        default="scenario",
-        help="FMI modelIdentifier (also library base name)",
-    )
-    ap.add_argument(
-        "--model-name", default="ScenarioFMU", help="Human-readable modelName"
-    )
-    ap.add_argument(
-        "--guid", default=None, help="GUID to embed (default: random uuid4)"
-    )
-    ap.add_argument("-s", "--scenario-data", type=str, default="", help="Scenario data, if empty it will create a number of generic outputs that can be parameterized")
-    args = ap.parse_args()
-
-    b = ScenarioFmuBuilder(
-        args.out, args.model_id, args.model_name, args.guid, __version__
-    )
-
-    b.add_raw(args.scenario_data)
-
-    return b.build()
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

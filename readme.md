@@ -2,39 +2,46 @@
 
 ## Note
 
-This builds an FMU (https://fmi-standard.org/) that outputs the equivalent of a csv table
+This builds an FMU (https://fmi-standard.org/) that outputs the equivalent of a csv table. 
+The input is coordinates and the interpolation method that is to be applied
 
 The reason is to enable the inclusion of synthetic data within an SSP (https://ssp-standard.org/) without relying on the importing tool.
 This will provide higher repeatability when migrating between tools 
 
+Use case:
+- build scenario fmu with custom connectors for a specific model or use a generic model with generic connections y1, y2,...
+- attach it to an ssp
+- create parameter sets to capture alterations in the scenario or use the default if applicable
 
 Easiest utilized with the python package
 
 ## Input 
 The input is a string of values that corresponds to a csv or equivalent, this is specified as an parameter for the fmu (scenario_input). 
 
-- The first one should always specify time.
 - All values will be parsed as doubles
-- It is acceptable to leave fields empty
 
-Parameter value specifying input
+An fmu parameter value is used to handle the input to the model.
+Input, where t is time and v is the variables. Enter (\n) is used as separator between variables
 ```
-Input, where t is time and v is the variables
-[t0, v1.1, v2.1, ...][t1, v1.2, v2.2, ...][...]
+name_1;interpolation_method_1;t_0,var_1.0;t_1,var_1.2
+name_2;interpolation_method_2;t_0,var_2.0;t_3,var_2.2
+...
+```
 
 for example:
-[0;0;0][1;4;5][2;3;3][2.5;;4][3;3;3]
+```
+var1;L;1,0;3,0.5;5,4;9,2
+var2;ZOH;2,0;3,0.5;5,4;9,2
+var2;NN;0,0;1,0.5;2,4;3,2
 ```
 
-## Interpolation possibilities
+### Interpolation methods
 
-List of interpolation methods, each one corresponds to the same position in the list of parameters
+Each one corresponds to the same position in the list of parameters
 Parameter value specifying interpolation
-```
-[L;L;ZOH]
-```
+
 - L: Linear
-- C: Cubic
+- C: Cubic (Not supported yet)
 - ZOH: Zero order hold
 - NN: Nearest Neighbor
 
@@ -53,20 +60,19 @@ x,y = x:variable y:timestep
 
 ## Execution
 
-
 Value references will be the sequential number in the input order. 1 and 2 are used for input
 ```
 // Setup
-const fmi2ValueReference vr_in[2] = {0, 1};
-const fmi2String values[2] = {"[0;0;0][1;4;5][2;3;3][2.5;;4][3;3;3]", "[L;L;ZOH]"};
+const fmi2ValueReference vr_in[1] = {0};
+const fmi2String values[1] = {"var1;L;1,0;3,0.5;5,4;9,2\nvar2;ZOH;2,0;3,0.5;5,4;9,2\nvar2;NN;0,0;1,0.5;2,4;3,2"};
 
-fmi2SetString(comp, vr_in, 2, values)
+fmi2SetString(comp, vr_in, 1, values)
 
 fmi2EnterInitializationMode(comp)
 fmi2ExitInitializationMode(comp)
 
 // Take a step to the time and get the values
-const fmi2ValueReference vr_out[3] = {2, 3, 4};
+const fmi2ValueReference vr_out[3] = {1, 2, 3};
 fmi2Real out_vals[3] = {0.0, 0.0, 0.0};
 fmi2Status fmi2DoStep(fmi2Component c, ...)
 fmiGetReal(fmi2Component c, fmi2ValueReference vr[], size_t nvr, fmi2Real value[])
@@ -113,49 +119,31 @@ cmake --build build && objdump -TC ./build/libs/scenario_fmu/libscenario.so | gr
 ```
 
 
-## FMU Packaging
+## Python Tools (Packaging, SSV generation)
 
-You can package a complete FMI 2.0 Co‑Simulation FMU containing `modelDescription.xml` and the shared library via the installed CLI
+You can:
+- package a complete FMI 2.0 Co‑Simulation FMU containing `modelDescription.xml` and the shared library via the installed CLI
+- Generate custom parameter sets for the fmus
 
-Using the installable CLI (recommended):
+More info in the python package readme [./python/README.md]
+
+The Python utilities live in `python/` and can be installed locally:
 ```
 # one‑time local install of Python tools
-`pip install -e ./python` and optionally `pip install 'scenario-fmu-generator'`
-
-# package FMU into build/scenario.fmu
-scenario-fmu-package --out scenario.fmu
+`pip install -e ./python`
 ```
-
-This generates `modelDescription.xml`, detect platform (`binaries/linux64`, `darwin64`,
-`win32`/`win64`) and copy the built shared library (`libscenario.so`/`libscenario.dylib`/
-`scenario.dll`).
 
 ## Run with FMPy
 
-Use the CLI to run the FMU with FMPy, capture a CSV, and optionally a plot if matplotlib is availible.
+Simple script to run the FMU with FMPy, capture a CSV, and optionally a plot if matplotlib is availible.
+build and package before executing
 
 ```
 ./scripts/run_fmu.py
 ```
-
-# build, package and run
-cmake --build build && scenario-fmu-package && ./scripts/run_fmu.py
-
-See `--help` for input variations; defaults target the default build.
 
 - Outputs:
   - CSV: `reference_results/results.csv` 
   - Plot: `reference_results/results.png`
 
 
-## Python Tools (Packaging & CLI)
-
-The Python utilities live in `python/` and can be installed locally:
-
-To build distributable (wheel/sdist) for publishing:
-
-```
-cd python
-python -m build
-```
-By default, CMake copies the built shared library into the Python package.
