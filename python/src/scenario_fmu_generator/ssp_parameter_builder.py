@@ -31,13 +31,13 @@ class ParameterSetBuilder:
         return self.add_(name, "String", value)
 
     def add_real(self, name: str, value: str = "0") -> "ParameterSetBuilder":
-        return self.add_(name, "Real", value)
+        return self.add_(name, "Real", str(value))
 
     def add_integer(self, name: str, value: str = "0") -> "ParameterSetBuilder":
-        return self.add_(name, "Integer", value)
+        return self.add_(name, "Integer", str(value))
 
     def add_boolean(self, name: str, value: str = "false") -> "ParameterSetBuilder":
-        return self.add_(name, "Boolean", value)
+        return self.add_(name, "Boolean", str(value))
 
     def extend(self, items: Iterable[Parameter]) -> "ParameterSetBuilder":
         for p in items:

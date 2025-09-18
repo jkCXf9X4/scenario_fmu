@@ -10,6 +10,9 @@ class Variable:
         self.interpolation = interpolation
         self.series: list[list[float, float]] = series
 
+    def start_value(self):
+        return self.series[0][1]
+
     @staticmethod
     def from_str(string: str):
         parts = string.split(";")

@@ -27,7 +27,7 @@ def generate_model_description(
             "canInterpolateInputs": "false",
             "needsExecutionTool": "false",
             "canBeInstantiatedOnlyOncePerProcess": "false",
-            "canNotUseMemoryManagementFunctions": "false",
+            "canNotUseMemoryManagementFunctions": "true",
             "providesDirectionalDerivative": "false",
         },
     )
