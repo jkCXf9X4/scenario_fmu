@@ -1,6 +1,6 @@
-
 from .variable import Variable, Variables
 import xml.etree.ElementTree as ET
+
 
 def generate_model_description(
     model_name: str, model_id: str, guid: str, variables: list[Variable], version: str
@@ -14,6 +14,7 @@ def generate_model_description(
             "author": "scenario_fmu",
             "version": version,
             "generationTool": "scenario_fmu",
+            "variableNamingConvention": "structured",
             "numberOfEventIndicators": "0",
         },
     )
@@ -32,7 +33,11 @@ def generate_model_description(
         },
     )
 
-    ET.SubElement(root, "DefaultExperiment", attrib={"startTime": "0.0"})
+    ET.SubElement(
+        root,
+        "DefaultExperiment",
+        attrib={"startTime": "0.0", "stopTime": "10.0", "tolerance": "0.0001"},
+    )
 
     mvars = ET.SubElement(root, "ModelVariables")
 
@@ -65,6 +70,11 @@ def generate_model_description(
     for i in range(len(variables)):
         index = 2 + i  # 1-based index into ModelVariables list
         ET.SubElement(outs, "Unknown", attrib={"index": str(index)})
+    # Dymola fails if this is present...
+    # outs = ET.SubElement(mstr, "InitialUnknowns")
+    # for i in range(len(variables)):
+    #     index = 2 + i  # 1-based index into ModelVariables list
+    #     ET.SubElement(outs, "Unknown", attrib={"index": str(index)})
 
     tree = ET.ElementTree(root)
     ET.indent(tree, space="\t", level=0)
