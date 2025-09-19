@@ -21,7 +21,7 @@ def detect_platform_folder() -> str:
 def lib_name_for(model_id: str) -> str:
     sysplat = sys.platform
     if sysplat.startswith("linux"):
-        return f"lib{model_id}.so"
+        return f"{model_id}.so"
     if sysplat == "darwin":
         return f"lib{model_id}.dylib"
     return f"{model_id}.dll"

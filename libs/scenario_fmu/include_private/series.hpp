@@ -124,7 +124,7 @@ namespace
         // empty or before first time, do nothing
         if (sd.times.empty() || time < *sd.times.begin())
         {
-            return 0.0;
+            return 0.0; 
         }
 
         // interpolation territory

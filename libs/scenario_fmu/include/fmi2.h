@@ -30,12 +30,12 @@ extern "C"
     /* Type definitions */
     typedef enum
     {
-        fmi2OK = 1,
-        fmi2Warning = 2,
-        fmi2Discard = 3,
-        fmi2Error = 4,
-        fmi2Fatal = 5,
-        fmi2Pending = 6
+        fmi2OK,
+        fmi2Warning,
+        fmi2Discard,
+        fmi2Error,
+        fmi2Fatal,
+        fmi2Pending
     } fmi2Status;
 
     typedef enum

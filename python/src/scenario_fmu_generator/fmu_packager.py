@@ -66,7 +66,7 @@ class ScenarioFmuPackager:
             platform_folder = detect_platform_folder()
             bin_dir = tmp / "binaries" / platform_folder
             bin_dir.mkdir(parents=True, exist_ok=True)
-            lib_target_name = lib_name_for(self.model_id).removeprefix("lib")
+            lib_target_name = lib_name_for(self.model_id)
             shutil.copy2(lib_src, bin_dir / lib_target_name)
 
             print("- Pack zip")

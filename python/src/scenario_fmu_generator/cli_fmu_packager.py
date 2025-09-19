@@ -25,7 +25,7 @@ def main() -> int:
         help="FMI modelIdentifier (also library base name)",
     )
     ap.add_argument(
-        "--model-name", default="ScenarioFMU", help="Human-readable modelName"
+        "--model-name", default="scenario", help="Human-readable modelName"
     )
     ap.add_argument(
         "--guid", default=None, help="GUID to embed (default: random uuid4)"

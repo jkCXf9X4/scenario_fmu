@@ -15,6 +15,15 @@ target_include_directories(scenario
  
 )
 
+target_link_options(scenario PRIVATE "-Wl,--version-script=${CMAKE_CURRENT_LIST_DIR}/version.map")
+
+set_target_properties(scenario PROPERTIES
+  PREFIX    ""         # removes "lib" prefix
+  #VERSION   1.0.0
+  #SOVERSION 1          # SONAME becomes "scenario.so.1"
+)
+
+
 # Copy the built shared library into the Python package's binaries folder
 # to make it available for packaging into wheels.
 
@@ -44,3 +53,4 @@ add_custom_command(TARGET scenario POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:scenario> "${PY_BINARY_FOLDER}/$<TARGET_FILE_NAME:scenario>"
   COMMENT "Copying scenario library to ${PY_BINARY_FOLDER}"
 )
+
