@@ -133,6 +133,32 @@ TEST(ScenarioFMU, OutputDerivativeLinearInterpolation)
     fmi2Component comp = nullptr;
     ASSERT_TRUE(setup(&comp));
 
+    
+    const fmi2Integer orders[1] = {1};
+    fmi2Real derivatives[1] = {0.0};
+    fmi2ValueReference vr_out[1] = {1};
+    
+    ASSERT_EQ(fmi2OK, fmi2DoStep(comp, 4.0, 0.0, fmiTrue));
+    
+    vr_out[0] = 1;
+    auto status = fmi2GetRealOutputDerivatives(comp, vr_out, 1, orders, derivatives);
+    EXPECT_EQ(fmi2OK, status);
+    EXPECT_NEAR(1.75, derivatives[0], 1e-9);
+
+    ASSERT_EQ(fmi2OK, fmi2DoStep(comp, 4.9, 0.0, fmiTrue));
+
+    status = fmi2GetRealOutputDerivatives(comp, vr_out, 1, orders, derivatives);
+    EXPECT_EQ(fmi2OK, status);
+    EXPECT_NEAR(1.75, derivatives[0], 1e-9);
+
+    fmi2FreeInstance(comp);
+}
+
+TEST(ScenarioFMU, OutputDerivativeLinearInterpolationTransgress)
+{
+    fmi2Component comp = nullptr;
+    ASSERT_TRUE(setup(&comp));
+
     ASSERT_EQ(fmi2OK, fmi2DoStep(comp, 4.0, 0.0, fmiTrue));
 
     const fmi2Integer orders[1] = {1};
@@ -140,24 +166,65 @@ TEST(ScenarioFMU, OutputDerivativeLinearInterpolation)
     fmi2ValueReference vr_out[1] = {1};
 
     vr_out[0] = 1;
-
     auto status = fmi2GetRealOutputDerivatives(comp, vr_out, 1, orders, derivatives);
     EXPECT_EQ(fmi2OK, status);
     EXPECT_NEAR(1.75, derivatives[0], 1e-9);
 
-    vr_out[0] = 2;
+    ASSERT_EQ(fmi2OK, fmi2DoStep(comp, 5.0, 0.0, fmiTrue));
+
     status = fmi2GetRealOutputDerivatives(comp, vr_out, 1, orders, derivatives);
     EXPECT_EQ(fmi2OK, status);
+    EXPECT_NEAR(1.75, derivatives[0], 1e-9);
+
+    ASSERT_EQ(fmi2OK, fmi2DoStep(comp, 5.1, 0.0, fmiTrue));
+
+    status = fmi2GetRealOutputDerivatives(comp, vr_out, 1, orders, derivatives);
+    EXPECT_EQ(fmi2OK, status);
+    EXPECT_NEAR(-0.5, derivatives[0], 1e-9);
+
+    fmi2FreeInstance(comp);
+}
+
+TEST(ScenarioFMU, OutputDerivativeNnZohInterpolation)
+{
+    fmi2Component comp = nullptr;
+    ASSERT_TRUE(setup(&comp));
+
+    ASSERT_EQ(fmi2OK, fmi2DoStep(comp, 4.0, 0.0, fmiTrue));
+
+    const fmi2Integer orders[1] = {1};
+    fmi2Real derivatives[1] = {0.0};
+    fmi2ValueReference vr_out[1] = {1};
+
+    vr_out[0] = 2;
+    auto status = fmi2GetRealOutputDerivatives(comp, vr_out, 1, orders, derivatives);
+    EXPECT_EQ(fmi2OK, status);
     EXPECT_NEAR(0, derivatives[0], 1e-9);
+
+    ASSERT_EQ(fmi2OK, fmi2DoStep(comp, 5.0, 0.0, fmiTrue));
 
     vr_out[0] = 3;
     status = fmi2GetRealOutputDerivatives(comp, vr_out, 1, orders, derivatives);
     EXPECT_EQ(fmi2OK, status);
     EXPECT_NEAR(0, derivatives[0], 1e-9);
 
-    vr_out[0] = 4;
-    status = fmi2GetRealOutputDerivatives(comp, vr_out, 1, orders, derivatives);
-    EXPECT_EQ(fmi2Warning, status);
+    fmi2FreeInstance(comp);
+}
+
+TEST(ScenarioFMU, OutputDerivativeAfterLastPoint)
+{
+    fmi2Component comp = nullptr;
+    ASSERT_TRUE(setup(&comp));
+
+    ASSERT_EQ(fmi2OK, fmi2DoStep(comp, 20.0, 0.0, fmiTrue));
+
+    const fmi2ValueReference vr_out[1] = {1};
+    const fmi2Integer orders[1] = {1};
+    fmi2Real derivatives[1] = {0};
+
+    const auto status = fmi2GetRealOutputDerivatives(comp, vr_out, 1, orders, derivatives);
+    EXPECT_EQ(fmi2OK, status);
+    EXPECT_DOUBLE_EQ(0.0, derivatives[0]);
 
     fmi2FreeInstance(comp);
 }

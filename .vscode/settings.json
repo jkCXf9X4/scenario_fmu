@@ -65,6 +65,9 @@
         "valarray": "cpp",
         "variant": "cpp",
         "span": "cpp",
-        "format": "cpp"
+        "format": "cpp",
+        "csignal": "cpp",
+        "charconv": "cpp",
+        "unordered_set": "cpp"
     }
 }

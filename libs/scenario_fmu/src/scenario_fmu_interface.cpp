@@ -231,7 +231,7 @@ fmi2Status fmi2GetRealOutputDerivatives(fmi2Component comp,
         }
         
         const unsigned int index = ref - vrFirstOutput;
-        // std::cout << "aaa Index:" << index << " / " <<  model->outputs_count<< std::endl;
+        // std::cout << "aaa Index:" << index << " / " <<  model->outputs_count<< " Time:" << model->current_time << std::endl;
 
         if (index >= model->outputs_count)
         {

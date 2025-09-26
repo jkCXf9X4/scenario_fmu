@@ -182,7 +182,7 @@ namespace
     static double eval_output_derivative_at(SeriesData &sd,
                                             double time)
     {
-        if (time < sd.times.front())
+        if (time < sd.times.front() || time > sd.times.back())
         {
             return 0.0;
         }
