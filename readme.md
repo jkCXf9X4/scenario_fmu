@@ -92,7 +92,7 @@ git submodule init && git submodule update
 cmake --preset=vcpkg
 
 # Define build type
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug'
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
 # Clear everything and start from the beginning
