@@ -30,6 +30,7 @@ def generate_model_description(
             "canBeInstantiatedOnlyOncePerProcess": "false",
             "canNotUseMemoryManagementFunctions": "true",
             "providesDirectionalDerivative": "false",
+            "maxOutputDerivativeOrder":"1"
         },
     )
 

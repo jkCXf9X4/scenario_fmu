@@ -210,6 +210,61 @@ fmi2Status fmi2GetReal(fmi2Component comp,
     return status;
 }
 
+fmi2Status fmi2GetRealOutputDerivatives(fmi2Component comp,
+                                        const fmi2ValueReference vr[], size_t nvr,
+                                        const fmi2Integer order[],
+                                        fmi2Real value[])
+{
+    auto *model = Model::from_component<Model>(comp);
+    auto status = fmi2OK;
+
+    for (size_t i = 0; i < nvr; ++i)
+    {
+        const auto ref = vr[i];
+        const auto derivative_order = order[i];
+
+        if (ref < vrFirstOutput)
+        {
+            value[i] = 0.0;
+            status = fmi2Warning;
+            continue;
+        }
+        
+        const unsigned int index = ref - vrFirstOutput;
+        // std::cout << "aaa Index:" << index << " / " <<  model->outputs_count<< std::endl;
+
+        if (index >= model->outputs_count)
+        {
+            value[i] = 0.0;
+            status = fmi2Warning;
+            continue;
+        }
+        // std::cout << "aab" << std::endl;
+        
+        if (derivative_order != 1)
+        {
+            value[i] = 0.0;
+            status = fmi2Warning;
+            continue;
+        }
+        // std::cout << "aac" << std::endl;
+        
+        auto &series = model->series[index];
+        if (series.size < 2)
+        {
+            value[i] = 0.0;
+            status = fmi2Warning;
+            continue;
+        }
+        // std::cout << "aad"<< std::endl;;
+
+        const double derivative = eval_output_derivative_at(series, model->current_time);
+        value[i] = derivative;
+    }
+
+    return status;
+}
+
 fmi2Status fmi2Reset(fmi2Component comp)
 {
     auto *model = Model::from_component<Model>(comp);
@@ -404,14 +459,7 @@ fmi2Status fmi2SetRealInputDerivatives(fmi2Component comp,
     return fmi2OK;
 }
 
-fmi2Status fmi2GetRealOutputDerivatives(fmi2Component comp,
-                                        const fmi2ValueReference vr[], size_t nvr,
-                                        const fmi2Integer order[],
-                                        fmi2Real value[])
-{
-    auto *model = Model::from_component<Model>(comp);
-    return fmi2OK;
-}
+
 
 fmi2Status fmi2CancelStep(fmi2Component comp)
 {

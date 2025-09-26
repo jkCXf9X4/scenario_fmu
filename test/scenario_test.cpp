@@ -128,6 +128,76 @@ TEST(ScenarioFMU, ParseExtrapolateAfter)
     fmi2FreeInstance(comp);
 }
 
+TEST(ScenarioFMU, OutputDerivativeLinearInterpolation)
+{
+    fmi2Component comp = nullptr;
+    ASSERT_TRUE(setup(&comp));
+
+    ASSERT_EQ(fmi2OK, fmi2DoStep(comp, 4.0, 0.0, fmiTrue));
+
+    const fmi2Integer orders[1] = {1};
+    fmi2Real derivatives[1] = {0.0};
+    fmi2ValueReference vr_out[1] = {1};
+
+    vr_out[0] = 1;
+
+    auto status = fmi2GetRealOutputDerivatives(comp, vr_out, 1, orders, derivatives);
+    EXPECT_EQ(fmi2OK, status);
+    EXPECT_NEAR(1.75, derivatives[0], 1e-9);
+
+    vr_out[0] = 2;
+    status = fmi2GetRealOutputDerivatives(comp, vr_out, 1, orders, derivatives);
+    EXPECT_EQ(fmi2OK, status);
+    EXPECT_NEAR(0, derivatives[0], 1e-9);
+
+    vr_out[0] = 3;
+    status = fmi2GetRealOutputDerivatives(comp, vr_out, 1, orders, derivatives);
+    EXPECT_EQ(fmi2OK, status);
+    EXPECT_NEAR(0, derivatives[0], 1e-9);
+
+    vr_out[0] = 4;
+    status = fmi2GetRealOutputDerivatives(comp, vr_out, 1, orders, derivatives);
+    EXPECT_EQ(fmi2Warning, status);
+
+    fmi2FreeInstance(comp);
+}
+
+TEST(ScenarioFMU, OutputDerivativeUnsupportedOrder)
+{
+    fmi2Component comp = nullptr;
+    ASSERT_TRUE(setup(&comp));
+
+    ASSERT_EQ(fmi2OK, fmi2DoStep(comp, 4.0, 0.0, fmiTrue));
+
+    const fmi2ValueReference vr_out[1] = {1};
+    const fmi2Integer orders[1] = {2};
+    fmi2Real derivatives[1] = {123.0};
+
+    const auto status = fmi2GetRealOutputDerivatives(comp, vr_out, 1, orders, derivatives);
+    EXPECT_EQ(fmi2Warning, status);
+    EXPECT_DOUBLE_EQ(0.0, derivatives[0]);
+
+    fmi2FreeInstance(comp);
+}
+
+TEST(ScenarioFMU, OutputDerivativeInvalidReference)
+{
+    fmi2Component comp = nullptr;
+    ASSERT_TRUE(setup(&comp));
+
+    ASSERT_EQ(fmi2OK, fmi2DoStep(comp, 4.0, 0.0, fmiTrue));
+
+    const fmi2ValueReference vr_out[1] = {4};
+    const fmi2Integer orders[1] = {1};
+    fmi2Real derivatives[1] = {42.0};
+
+    const auto status = fmi2GetRealOutputDerivatives(comp, vr_out, 1, orders, derivatives);
+    EXPECT_EQ(fmi2Warning, status);
+    EXPECT_DOUBLE_EQ(0.0, derivatives[0]);
+
+    fmi2FreeInstance(comp);
+}
+
 TEST(ScenarioFMU, SearchOptimization1)
 {
     fmi2Component comp = nullptr;

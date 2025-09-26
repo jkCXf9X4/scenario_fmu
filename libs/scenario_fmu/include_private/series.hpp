@@ -124,7 +124,7 @@ namespace
         // empty or before first time, do nothing
         if (sd.times.empty() || time < *sd.times.begin())
         {
-            return 0.0; 
+            return 0.0;
         }
 
         // interpolation territory
@@ -176,5 +176,47 @@ namespace
 
         // std::cout << "Extrapolate after last point, use zero order hold for all, time " << time  << std::endl;
         return sd.values[sd.access_index + 1];
+    }
+
+    // Evaluate the first derivative for a series at the requested time using interpolation data.
+    static double eval_output_derivative_at(SeriesData &sd,
+                                            double time)
+    {
+        if (time < sd.times.front())
+        {
+            return 0.0;
+        }
+
+        size_t index = sd.access_index;
+        for (size_t i = index; i < sd.size - 1; ++i)
+        {
+            if (time <= sd.times[i + 1])
+            {
+                index = i;
+                break;
+            }
+        }
+        const double t0 = sd.times[index];
+        const double t1 = sd.times[index + 1];
+
+        switch (sd.interpolation)
+        {
+        case Interpolation::Linear:
+        {
+            const double dt = t1 - t0;
+            if (dt == 0.0)
+            {
+                return 0.0;
+            }
+            const double v0 = sd.values[index];
+            const double v1 = sd.values[index + 1];
+            return (v1 - v0) / dt;
+        }
+        case Interpolation::Zoh:
+        case Interpolation::NearestNeighbor:
+        case Interpolation::Cubic:
+        default:
+            return 0.0;
+        }
     }
 }
